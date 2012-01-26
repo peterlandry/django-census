@@ -1,4 +1,4 @@
-from pyparsing import Word, oneOf, operatorPrecedence, opAssoc, nums, alphanums, Optional, OneOrMore, alphas, Combine
+from pyparsing import Word, oneOf, operatorPrecedence, opAssoc, printables, nums, alphanums, Optional, OneOrMore, alphas, Combine
 from decimal import Decimal
 from census.data import Table, Value
 
@@ -29,7 +29,7 @@ class FormulaParser(object):
 
     def grammar(self):
         number = Combine(Word(nums) + Optional("." + OneOrMore(Word(nums))))
-        table = Combine(Word(alphas) + OneOrMore(Word(alphanums)))
+        table = Combine(Word(alphas) + OneOrMore(Word("_"+alphanums)))
 
         number.setParseAction(self._number_parse_action)
         table.setParseAction(self._table_parse_action)

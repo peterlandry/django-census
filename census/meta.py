@@ -1,13 +1,12 @@
 import csv
 import os
 
-
 class BaseMeta(object):
     def _meta_reader(self):
         return csv.DictReader(open(self._meta_file(), 'r'), dialect='excel-tab')
 
     def _state_name(self, abbr):
-        from django.contrib.localflavor.us.us_states import US_STATES
+        from django.contrib.localflavor.us.us_states import STATES_NORMALIZED, US_STATES
         return filter(lambda s: s[0] == abbr.upper(), US_STATES)[0][1]
 
     def _file_name_for_matrix(self, matrix_number):
@@ -16,7 +15,7 @@ class BaseMeta(object):
     def _meta_for_file(self, file_name):
         return [row for row in self._meta_reader()
             if row['File Name'] == file_name]
-
+   
     def _meta_for_matrix(self, matrix_number):
         matrix, cell = self._parse_table(matrix_number)
         this_file_meta = [row for row in self._meta_reader()
@@ -29,7 +28,7 @@ class BaseMeta(object):
     def _parse_table(self, matrix_number):
         """ Splits a combined table+cell into parts.
 
-        Expects input in the form XXXXYYY or XXXXXYYY. The cell (YYY) must
+        Expects input in the form XXXXYYY or XXXXXYYY. The cell (YYY) must 
         be three digits.
 
         Table transformation ignores insignificant zeros. For example:
@@ -43,8 +42,8 @@ class BaseMeta(object):
         table_size = len(matrix_number) - self.cell_digits
         table = matrix_number[0:table_size]
         col_number = int(matrix_number[table_size:])
-
-        digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ]
+        
+        digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',]
         in_first_transition = False
         table_id = ''
         last = None
@@ -59,10 +58,10 @@ class BaseMeta(object):
             if in_first_transition and c == '0':
                 last = c
                 continue
-
+            
             table_id += c
             last = c
-
+        
         for meta_row in self._meta_reader():
             if table_id == meta_row['Matrix Number']:
                 if col_number > 0 and col_number <= int(meta_row['Cell Count']):
@@ -74,7 +73,7 @@ class BaseMeta(object):
         matrices_meta = self._meta_for_file(self._file_name_for_matrix(matrix_number))
 
         offset = self.data_cell_offset
-
+        
         for meta in matrices_meta:
             if meta['Matrix Number'] != matrix:
                 offset += int(meta['Cell Count'])
@@ -96,7 +95,8 @@ class ACSMeta(BaseMeta):
         super(ACSMeta, self).__init__()
 
     def _meta_file(self):
-        return os.path.join(os.path.dirname(__file__), self.data_table_matrix_file)
+        return os.path.join(os.path.dirname(__file__),self.data_table_matrix_file)
+
 
     def _parse_table(self, matrix):
         """ Expects input in the form XXXXX_YYY
@@ -150,6 +150,7 @@ class ACSMeta(BaseMeta):
             self._file_name_for_matrix(matrix_number),
             )
 
+
     def file_names_for_matrix(self, matrix_number, state_abbr, sumlevel):
         base_file_name = self._full_file_for_matrix(matrix_number, state_abbr)
         return ('e' + base_file_name, 'm' + base_file_name, )
@@ -161,27 +162,28 @@ class ACSMeta(BaseMeta):
         zip_path = os.path.join(
             state_name.replace(' ', ''),
             self._geo_dir_part(sumlevel),
-            "%s5%s%s000.zip" % (self.year_prefix, state_abbr.lower(), self._file_name_for_matrix(matrix_number), )
+            "%s5%s%s000.zip" % (self.year_prefix,state_abbr.lower(), self._file_name_for_matrix(matrix_number), )
         )
         return zip_path
 
 
 class ACS2010Meta(ACSMeta):
     def __init__(self):
-        super(ACS2010Meta, self).__init__("ACS_2006_2010.txt", "2010")
+        super(ACS2010Meta, self).__init__("ACS_2006_2010.txt","2010")
 
-
+     
 class CensusMeta(BaseMeta):
     data_cell_offset = 4
     cell_digits = 3
-
+    
     def __init__(self, summary_file):
         if summary_file not in ['SF1', 'SF3']:
             raise ValueError('%s is not a supported summary file.' % summary_file)
         self.summary_file = summary_file
 
     def _meta_file(self):
-        return os.path.join(os.path.dirname(__file__), '%s.txt' % self.summary_file)
+        return os.path.join(os.path.dirname(__file__),'%s.txt' % self.summary_file) 
+    
 
     def file_path_for_matrix(self, matrix_number, state_abbr, sumlevel):
         import os
@@ -191,7 +193,6 @@ class CensusMeta(BaseMeta):
             state_name.replace(' ', '_'),
             self._full_file_for_matrix(matrix_number, state_abbr)
         )
-
 
 class Census2010Meta(BaseMeta):
     data_cell_offset = 4
@@ -203,8 +204,8 @@ class Census2010Meta(BaseMeta):
             raise ValueError('%s is not a recognized 2010 file type' % file_type)
 
     def _meta_file(self):
-        return os.path.join(os.path.dirname(__file__), '2010_%s.txt' % self.file_type.upper())
-
+        return os.path.join(os.path.dirname(__file__),'2010_%s.txt' % self.file_type.upper()) 
+    
     def zip_file_path_for_matrix(self, matrix_number, state_abbr):
         """ PL data is always in a single zip file """
         import os
@@ -213,7 +214,7 @@ class Census2010Meta(BaseMeta):
             state_name.replace(' ', '_'),
             "%s2010.%s.zip" % (state_abbr.lower(), self.file_type)
         )
-
+    
     def file_name_for_matrix(self, matrix_number, state_abbr):
         return "%s000%s2010.%s" % (
             state_abbr.lower(),

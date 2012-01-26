@@ -2,8 +2,10 @@ from decimal import InvalidOperation
 
 from census.parse import FormulaParser
 from census.models import Row
-from census.meta import CensusMeta, ACSMeta, Census2010Meta, ACS2010Meta
+from census.meta import CensusMeta, ACS2010Meta, Census2010Meta
 from census.data import Value
+
+CACHE_EXPIRATION = 60 * 60 * 24 * 365
 
 
 class CensusBase(object):
@@ -78,37 +80,10 @@ class Census2010(CensusBase):
         return map(lambda v: Value(self._type_value(v)), raw_vals)
 
 
-class ACS2009e5(CensusBase):
-    def get_value(self, table, geo_dicts):
-        acs_info = ACSMeta()
-
-        if not isinstance(geo_dicts, list):
-            geo_dicts = [geo_dicts]
-        acs_info = ACSMeta()
-
-        col = acs_info.csv_column_for_matrix(table)
-        raw_values = Row.objects.filter(
-            fileid='ACSSF',
-            filetype__in=['2009e5', '2009m5'],
-            cifsn=acs_info._file_name_for_matrix(table),
-            stusab__in=map(lambda g: g['STUSAB'].lower(), geo_dicts),
-            logrecno__in=map(lambda g: g['LOGRECNO'], geo_dicts)
-        ).values_list('logrecno', 'filetype', "col%s" % str(col - 5))
-        values = {}
-        for logrecno, filetype, val in raw_values:
-            if not logrecno in values:
-                values[logrecno] = Value(0)
-
-            if filetype == '2009e5':
-                values[logrecno].value = self._type_value(val)
-            else:
-                values[logrecno].moe = self._type_value(val)
-
-        return values.values()
-
-
 class ACS2010e5(CensusBase):
     def get_value(self, table, geo_dicts):
+
+
         if not isinstance(geo_dicts, list):
             geo_dicts = [geo_dicts]
 
@@ -137,5 +112,6 @@ class ACS2010e5(CensusBase):
 
             if not logrecno in values:
                 values[logrecno] = Value(value, moe)
+
 
         return values.values()

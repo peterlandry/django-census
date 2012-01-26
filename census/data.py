@@ -146,6 +146,8 @@ class Table(object):
                 SUMLEV
                 LOGRECNO
         """
+        #print "Table.__call__: %s, %s, %s, %s, %s, %s" % (self.datasource, self.table, self.left, self.right, self.operation, geo)
+
         if self.operation:
             left_result = self.left(geo)
             right_result = self.right(geo)
@@ -175,9 +177,12 @@ class Table(object):
             return left_val * right_val
         return None
 
+
     @property
     def name(self):
         if self.table:
             return unicode(self.table)
         else:
             return u"%s %s %s" % (self.left.name, self.operation, self.right.name)
+
+
