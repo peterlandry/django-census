@@ -83,7 +83,6 @@ class Census2010(CensusBase):
 class ACS2010e5(CensusBase):
     def get_value(self, table, geo_dicts):
 
-
         if not isinstance(geo_dicts, list):
             geo_dicts = [geo_dicts]
 
@@ -97,21 +96,14 @@ class ACS2010e5(CensusBase):
             stusab__in=map(lambda g: g['STUSAB'].lower(), geo_dicts),
             logrecno__in=map(lambda g: g['LOGRECNO'], geo_dicts)
         ).values_list('logrecno', 'filetype', "col%s" % str(col - 5))
-
         values = {}
         for logrecno, filetype, val in raw_values:
-
-            value = 0
-            moe = 0
+            if not logrecno in values:
+                values[logrecno] = Value(0)
 
             if filetype == '2010e5':
-
-                value = self._type_value(val)
+                values[logrecno]._value = self._type_value(val)
             else:
-                moe = self._type_value(val)
-
-            if not logrecno in values:
-                values[logrecno] = Value(value, moe)
-
+                values[logrecno]._moe = self._type_value(val)
 
         return values.values()
